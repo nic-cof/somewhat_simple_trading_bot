@@ -1,0 +1,18 @@
+project_root/
+├── data/
+│   ├── raw/
+│   │   └── mes_data_1min.csv
+│   └── processed/
+├── src/
+│   ├── data_cleaner.py
+│   ├── data_quality.py
+│   ├── diagnostic_utils.py
+│   ├── feature_engineering.py
+│   ├── futures_trading.py
+│   ├── log_utils.py
+│   ├── model_evaluator.py
+│   ├── model_factory.py
+│   ├── model_trainer.py
+│   └── trading_analysis.py
+├── config.py
+└── main.py
