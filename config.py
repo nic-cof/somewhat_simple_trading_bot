@@ -61,7 +61,7 @@ class TradingConfig:
     """Configuration for futures trading settings"""
     # Basic trading parameters
     target_horizon: int = 5  # Target horizon for predictions (in minutes)
-    initial_capital: float = 100000
+    initial_capital: float = 10000
     margin_per_contract: float = 1210  # MES initial margin
     commission_per_contract: float = 0.00
 

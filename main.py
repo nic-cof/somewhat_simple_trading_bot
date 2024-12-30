@@ -584,9 +584,9 @@ class TradingSystem:
                     # Only take directional trades if probability is higher than stable
                     direction = 0  # Default to no trade
                     if pred_up > max(pred_down, pred_stable):
-                        direction = 1
+                        direction = -1                      # reversed to test for incorrect logic
                     elif pred_down > max(pred_up, pred_stable):
-                        direction = -1
+                        direction = 1                       # reversed to test for incorrect logic
 
                     # Skip if no clear direction
                     if direction == 0:
@@ -653,7 +653,7 @@ class TradingSystem:
                                 simulation_metrics['trades_skipped'] += 1
 
                     # Log progress periodically
-                    if (i + 1) % 1000 == 0:
+                    if (i + 1) % 10000 == 0:
                         self.log_simulation_progress(i, len(test_data), simulation_start_time,
                                                      simulation_metrics, trade_date)
 

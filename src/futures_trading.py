@@ -361,7 +361,7 @@ class FuturesTrader:
                 'trade_value': trade_value,
                 'total_cost': slippage_cost + commission,
                 'duration': 0.0,
-                'exit_reason': None
+                'exit_reason': 'open'  # Or 'active' or 'entry'
             }
 
             # Log trade creation
@@ -465,10 +465,10 @@ class FuturesTrader:
                     position['exit_price'] = current_price  # Set the exit price
                     position['exit_time'] = timestamp
                     position['pnl'] = current_value - (position['slippage'] + position['commission'])
-                    self.close_position(position, current_price, timestamp)
+                    self.close_position(position, current_price, timestamp, exit_reason)
                     self.active_positions.remove(position)  # Remove closed position
 
-    def close_position(self, position: Dict, exit_price: float, timestamp: pd.Timestamp) -> None:
+    def close_position(self, position: Dict, exit_price: float, timestamp: pd.Timestamp, exit_reason: str) -> None:
         """Close a position with proper tick-based P&L calculation."""
         try:
             self.logger.info(f"\nClosing position:")
@@ -521,7 +521,8 @@ class FuturesTrader:
                 'raw_pnl': position_pnl,
                 'total_costs': total_costs,
                 'pnl': final_pnl,
-                'price_movement_ticks': ticks
+                'price_movement_ticks': ticks,
+                'exit_reason': exit_reason
             })
 
             self.logger.info(f"Position duration: {duration_minutes:.1f} minutes")
