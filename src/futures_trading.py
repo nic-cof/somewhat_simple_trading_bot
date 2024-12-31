@@ -190,6 +190,14 @@ class FuturesTrader:
             self.logger.debug(f"Confidence: {confidence:.3f} (min: {self.params.min_confidence})")
             self.logger.debug(f"Volume: {volume} (min: {self.params.liquidity_threshold})")
 
+            # Check maximum allowed trades
+            trade_date = timestamp.date()
+            trades_today = sum(1 for t in self.trades_history if pd.Timestamp(t['timestamp']).date() == trade_date)
+
+            if trades_today >= self.params.max_trades_per_day:
+                self.logger.debug(f"Daily trade limit reached: {trades_today} trades")
+                return False
+
             # Check trading hours first
             if not self.is_valid_trading_time(timestamp):
                 self.logger.debug(f"Invalid trading time: {timestamp}")
@@ -437,11 +445,11 @@ class FuturesTrader:
                 should_exit = False
                 exit_reason = ''
 
-                # Time-based exit
                 if elapsed_minutes >= max_hold_time:
-                    should_exit = True
-                    exit_reason = 'time_exit'
-                    self.logger.info(f"Time exit triggered after {elapsed_minutes:.1f} minutes")
+                    position['exit_reason'] = 'time_exit'
+                    self.close_position(position, current_price, timestamp, 'time_exit')
+                    self.active_positions.remove(position)
+                    continue
 
                 # Price-based exits with proper profit calculation
                 elif position['direction'] == 1:  # Long position
@@ -466,7 +474,7 @@ class FuturesTrader:
                     position['exit_time'] = timestamp
                     position['pnl'] = current_value - (position['slippage'] + position['commission'])
                     self.close_position(position, current_price, timestamp, exit_reason)
-                    self.active_positions.remove(position)  # Remove closed position
+                    self.active_positions.remove(position)
 
     def close_position(self, position: Dict, exit_price: float, timestamp: pd.Timestamp, exit_reason: str) -> None:
         """Close a position with proper tick-based P&L calculation."""
@@ -476,7 +484,7 @@ class FuturesTrader:
             self.logger.info(f"Provided exit price: ${exit_price:.2f}")
 
             # Validate exit price
-            if exit_price <= 0 or exit_price > 10000:
+            if exit_price <= 2000 or exit_price > 10000:
                 self.logger.error(f"Invalid exit price detected: ${exit_price:.2f}")
                 exit_price = position['entry_price']
                 self.logger.info(f"Using entry price as exit price: ${exit_price:.2f}")
@@ -490,25 +498,17 @@ class FuturesTrader:
 
             # Calculate price difference in ticks (0.25 per tick)
             price_diff_points = exit_price - position['entry_price']
-            if position['direction'] == -1:  # Short position
+            if position['direction'] == -1:
                 price_diff_points = -price_diff_points
 
-            self.logger.info(f"Price difference in points: {price_diff_points:.2f}")
-
-            # Convert points to ticks and calculate P&L
-            ticks = round(price_diff_points / 0.25)  # Round to nearest tick
-            tick_value = 1.25  # $1.25 per tick
+            # Convert to ticks and calculate P&L
+            ticks = round(price_diff_points / 0.25)  # Each tick is 0.25 points
+            tick_value = 1.25  # MES tick value is $1.25
             position_pnl = ticks * tick_value * position['contracts']
 
-            self.logger.info(f"Ticks: {ticks}")
-            self.logger.info(f"Position PnL before costs: ${position_pnl:.2f}")
-
             # Apply costs
-            total_costs = position.get('commission', 0) + position.get('slippage', 0)
+            total_costs = position['commission'] + position['slippage']
             final_pnl = position_pnl - total_costs
-
-            self.logger.info(f"Total costs: ${total_costs:.2f}")
-            self.logger.info(f"Final PnL: ${final_pnl:.2f}")
 
             # Calculate duration
             duration_td = timestamp - position['timestamp']
@@ -960,19 +960,6 @@ class FuturesTrader:
         except Exception as e:
             self.logger.error(f"Error getting trading summary: {str(e)}")
             return {}
-
-    def setup_trade_logging(self):
-        """Setup dedicated trade logging"""
-        trade_logger = logging.getLogger('trade_execution')
-        trade_logger.setLevel(logging.INFO)
-
-        # Create trade log file handler
-        handler = logging.FileHandler('logs/trade_execution.log')
-        formatter = logging.Formatter('%(asctime)s - %(message)s')
-        handler.setFormatter(formatter)
-        trade_logger.addHandler(handler)
-
-        return trade_logger
 
 
 class ExecutionFailureTracker:

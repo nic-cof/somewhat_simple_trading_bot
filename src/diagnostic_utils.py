@@ -696,7 +696,8 @@ class TradingDiagnostics:
                 'slippage': trade['slippage'],
                 'commission': trade['commission'],
                 'confidence': trade['confidence'],
-                'session': trade['conditions'].get('session', 'unknown')
+                'session': trade['conditions'].get('session', 'unknown'),
+                'exit_reason' :trade['exit_reason']
             }
             trade_data.append(detail)
 

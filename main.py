@@ -545,13 +545,9 @@ class TradingSystem:
                     if i >= len(predictions):
                         continue
 
-                    # Log current state with more detail
-                    self.logger.logger.debug(f"\nProcessing timestamp: {timestamp}")
-                    self.logger.logger.debug(f"OHLC: Open=${row['open']:.2f}, High=${row['high']:.2f}, " +
-                                             f"Low=${row['low']:.2f}, Close=${row['close']:.2f}")
 
                     # Validate price data
-                    if not (0 < row['close'] < 10000):
+                    if not (2000 < row['close'] < 10000):
                         self.logger.logger.warning(f"Suspicious price detected: ${row['close']:.2f}")
                         continue
 
@@ -574,9 +570,6 @@ class TradingSystem:
                     pred_down = predictions[i][0]  # Probability of down move
                     pred_stable = predictions[i][1]  # Probability of stable
                     pred_up = predictions[i][2]  # Probability of up move
-
-                    self.logger.logger.debug(f"Predictions - Down: {pred_down:.4f}, "
-                                             f"Stable: {pred_stable:.4f}, Up: {pred_up:.4f}")
 
                     # Determine confidence and direction
                     confidence = float(max(predictions[i]))
@@ -706,14 +699,14 @@ class TradingSystem:
     def log_simulation_progress(self, current_index: int, total_samples: int,
                                 start_time: datetime, metrics: Dict, current_date: date) -> None:
         """Log progress of trading simulation."""
-        elapsed_time = (datetime.now() - start_time).total_seconds()
-        progress = (current_index + 1) / total_samples * 100
 
-        self.logger.logger.info(
-            f"Progress: {progress:.1f}% ({current_index + 1}/{total_samples}) - "
-            f"Elapsed: {elapsed_time:.1f}s - Date: {current_date} - "
-            f"Trades: {metrics['trades_executed']} executed, {metrics['trades_skipped']} skipped"
-        )
+        if (current_index + 1) % 1000 == 0:  # Reduced frequency
+            elapsed_time = (datetime.now() - start_time).total_seconds()
+            progress = (current_index + 1) / total_samples * 100
+            self.logger.logger.info(
+                f"Progress: {progress:>3.0f}% | Time: {elapsed_time:.0f}s | "
+                f"Trades: {metrics['trades_executed']}"
+            )
 
     def store_simulation_results(self, metrics: Dict, simulation_duration: float, diagnostic_summary: Dict) -> None:
         """Store results from trading simulation."""
